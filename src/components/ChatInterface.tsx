@@ -3,6 +3,8 @@ import { Send, Bot, Sparkles, Menu, Clapperboard } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { Sidebar } from './Sidebar';
 import { useConversations } from '../hooks/useConversations';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 export const ChatInterface: React.FC = () => {
   const {
@@ -12,8 +14,12 @@ export const ChatInterface: React.FC = () => {
     setActiveConversationId,
     startNewConversation,
     addMessageToActive,
+    updateLastMessage,
     deleteConversation,
   } = useConversations();
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,27 +34,53 @@ export const ChatInterface: React.FC = () => {
     scrollToBottom();
   }, [activeConversation?.messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    addMessageToActive({
-      role: 'user',
-      content: inputValue,
-    });
-    
     const currentUserInput = inputValue;
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      addMessageToActive({
-        role: 'ai',
-        content: `I'm currently running in mock mode. Once the backend and vector DB are hooked up, I'll search my knowledge base for recommendations matching: "${currentUserInput}"`,
+    addMessageToActive([
+      { role: 'user', content: currentUserInput },
+      { role: 'ai', content: '' } // Empty placeholder for streaming
+    ]);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: currentUserInput }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value, { stream: true });
+        // Assuming updateLastMessage hook exists
+        if (text) {
+          updateLastMessage(text);
+        }
+      }
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      updateLastMessage(`\n\n**Error:** Could not fetch response. ${error.message}`);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -103,7 +135,62 @@ export const ChatInterface: React.FC = () => {
           }}>
             <Bot size={20} color="white" />
           </div>
-          <h1 style={{ margin: 0, fontSize: '1.25rem' }}>PlotArmor AI</h1>
+          <h1 style={{ margin: 0, fontSize: '1.25rem', flex: 1 }}>PlotArmor AI</h1>
+
+          {/* Authentication Status */}
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Hi, {user.name}
+              </span>
+              {user.role === 'SuperAdmin' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    fontSize: '0.85rem',
+                    background: 'linear-gradient(135deg, var(--accent-primary), #ff7b9c)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    boxShadow: '0 2px 10px rgba(255, 61, 113, 0.3)',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  Admin Dashboard
+                </button>
+              )}
+              <button
+                onClick={logout}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem'
+                }}
+              >
+                Log Out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="btn-primary"
+              style={{
+                padding: '0.4rem 1rem',
+                fontSize: '0.9rem'
+              }}
+            >
+              Sign In
+            </button>
+          )}
         </header>
 
         {/* Messages or Empty State */}

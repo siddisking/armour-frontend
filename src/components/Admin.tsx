@@ -1,9 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Database, UploadCloud, Play } from 'lucide-react';
+import { Database, UploadCloud, Play, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate, Navigate } from 'react-router-dom';
 
 export const Admin: React.FC = () => {
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<string>('anime');
+  const [uploadMode, setUploadMode] = useState<'overwrite' | 'update'>('update');
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
@@ -13,6 +18,12 @@ export const Admin: React.FC = () => {
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
+
+  // RBAC Protection: Only SuperAdmin allowed
+  if (isAuthLoading) return null;
+  if (!user || user.role !== 'SuperAdmin') {
+    return <Navigate to="/" replace />;
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -24,16 +35,22 @@ export const Admin: React.FC = () => {
     if (!file) return;
 
     setIsUploading(true);
+    setProgress(0);
+    setLogs([`Starting ingestion for ${file.name}...`]);
     setStatus('running');
-    setLogs((prev) => [...prev, `Starting ingestion for ${file.name}...`]);
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('mediaType', mediaType);
+    formData.append('uploadMode', uploadMode);
 
     try {
+      const token = sessionStorage.getItem('token');
       const response = await fetch('/api/ingest', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -63,6 +80,8 @@ export const Admin: React.FC = () => {
               } else if (data.status === 'progress') {
                 setProgress(data.count);
                 setLogs((prev) => [...prev, `Successfully processed and updated ${data.count} documents.`]);
+              } else if (data.status === 'log') {
+                setLogs((prev) => [...prev, data.message]);
               } else if (data.status === 'complete') {
                 setLogs((prev) => [...prev, "Ingestion completed successfully!"]);
                 setStatus('success');
@@ -86,8 +105,59 @@ export const Admin: React.FC = () => {
   };
 
   return (
-    <div className="admin-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: 'var(--text-primary)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+    <div className="app-container" style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+      <header className="app-header" style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '1rem 2rem',
+        borderBottom: '1px solid var(--border-color)',
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(10px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+          <button 
+            onClick={() => navigate('/')}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              padding: '0.4rem 0.8rem',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            ← Back to Chat
+          </button>
+          <h1 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>PlotArmor AI Admin</h1>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Hi, {user.name} (SuperAdmin)
+          </span>
+          <button
+            onClick={() => { logout(); navigate('/login'); }}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              padding: '0.4rem 0.8rem',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            Log Out
+          </button>
+        </div>
+      </header>
+
+      <div className="admin-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: 'var(--text-primary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <div style={{ padding: '1rem', background: 'rgba(255, 61, 113, 0.1)', borderRadius: '12px' }}>
           <Database size={32} color="var(--primary)" />
         </div>
@@ -123,6 +193,31 @@ export const Admin: React.FC = () => {
               <option value="series">TV Series (Hollywood Format)</option>
               <option value="movies">Movies (Hollywood Format)</option>
             </select>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center', gap: '2rem' }}>
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: uploadMode === 'update' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+              <input 
+                type="radio" 
+                name="uploadMode" 
+                value="update" 
+                checked={uploadMode === 'update'} 
+                onChange={() => setUploadMode('update')}
+                disabled={isUploading}
+              />
+              Update (Skip Existing)
+            </label>
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: uploadMode === 'overwrite' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+              <input 
+                type="radio" 
+                name="uploadMode" 
+                value="overwrite" 
+                checked={uploadMode === 'overwrite'} 
+                onChange={() => setUploadMode('overwrite')}
+                disabled={isUploading}
+              />
+              Overwrite (Delete & Replace)
+            </label>
           </div>
 
           <input 
@@ -188,6 +283,7 @@ export const Admin: React.FC = () => {
             ))
           )}
           <div ref={logsEndRef} />
+        </div>
         </div>
       </div>
     </div>

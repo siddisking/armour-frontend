@@ -49,23 +49,25 @@ export const useConversations = () => {
     setActiveConversationId(null);
   };
 
-  const addMessageToActive = (message: Omit<Message, 'id' | 'timestamp'>) => {
-    const newMessage: Message = {
-      ...message,
+  const addMessageToActive = (message: Omit<Message, 'id' | 'timestamp'> | Omit<Message, 'id' | 'timestamp'>[]) => {
+    const messagesArray = Array.isArray(message) ? message : [message];
+    const newMessages: Message[] = messagesArray.map(m => ({
+      ...m,
       id: Date.now().toString() + Math.random().toString(36).substring(7),
       timestamp: new Date(),
-    };
+    }));
 
     if (!activeConversationId) {
       // Creating a brand new conversation
-      const newTitle = message.role === 'user' 
-        ? message.content.slice(0, 30) + (message.content.length > 30 ? '...' : '')
+      const firstUserMessage = messagesArray.find(m => m.role === 'user');
+      const newTitle = firstUserMessage 
+        ? firstUserMessage.content.slice(0, 30) + (firstUserMessage.content.length > 30 ? '...' : '')
         : 'New Conversation';
 
       const newConv: Conversation = {
         id: Date.now().toString(),
         title: newTitle,
-        messages: [newMessage],
+        messages: newMessages,
         updatedAt: new Date(),
       };
       
@@ -78,7 +80,7 @@ export const useConversations = () => {
           if (conv.id === activeConversationId) {
             return {
               ...conv,
-              messages: [...conv.messages, newMessage],
+              messages: [...conv.messages, ...newMessages],
               updatedAt: new Date(),
             };
           }
@@ -86,6 +88,31 @@ export const useConversations = () => {
         }).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
       );
     }
+  };
+
+  const updateLastMessage = (content: string) => {
+    setConversations((prev) => {
+      // Find the most recently updated conversation to avoid closure staleness
+      if (prev.length === 0) return prev;
+      const sortedConvs = [...prev].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      const mostRecentConvId = sortedConvs[0].id;
+
+      return prev.map((conv) => {
+        if (conv.id === mostRecentConvId && conv.messages.length > 0) {
+          const lastIndex = conv.messages.length - 1;
+          const updatedMessages = [...conv.messages];
+          updatedMessages[lastIndex] = {
+            ...updatedMessages[lastIndex],
+            content: updatedMessages[lastIndex].content + content,
+          };
+          return {
+            ...conv,
+            messages: updatedMessages,
+          };
+        }
+        return conv;
+      });
+    });
   };
 
   const deleteConversation = (id: string) => {
@@ -102,6 +129,7 @@ export const useConversations = () => {
     setActiveConversationId,
     startNewConversation,
     addMessageToActive,
+    updateLastMessage,
     deleteConversation,
   };
 };

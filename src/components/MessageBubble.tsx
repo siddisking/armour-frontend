@@ -46,7 +46,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           borderTopLeftRadius: !isUser ? '0' : 'var(--radius-lg)',
         }}
       >
-        <p style={{ margin: 0, color: 'var(--text-primary)' }}>
+        <p style={{ margin: 0, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
           {message.content}
         </p>
         <span
