@@ -54,7 +54,7 @@ export const ChatInterface: React.FC = () => {
     ]);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/guest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
