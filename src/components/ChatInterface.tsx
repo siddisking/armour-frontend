@@ -39,8 +39,14 @@ export const ChatInterface: React.FC = () => {
     if (!inputValue.trim()) return;
 
     const currentUserInput = inputValue;
+    const currentHistory = activeConversation?.messages || [];
     setInputValue('');
     setIsLoading(true);
+
+    // Slice last 15 messages for history context payload
+    const historyPayload = currentHistory
+      .slice(-15)
+      .map(m => ({ role: m.role, content: m.content }));
 
     addMessageToActive([
       { role: 'user', content: currentUserInput },
@@ -53,7 +59,10 @@ export const ChatInterface: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: currentUserInput }),
+        body: JSON.stringify({ 
+          message: currentUserInput,
+          history: historyPayload
+        }),
       });
 
       if (!response.ok) {
