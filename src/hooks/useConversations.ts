@@ -4,44 +4,119 @@ import { Conversation, Message } from '../types';
 const STORAGE_KEY = 'plotarmor_conversations';
 
 export const useConversations = () => {
-  const [conversations, setConversations] = useState<Conversation[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Force filter out ANY conversation literally titled "New Conversation"
-        // in case they had multiple messages or weird states from before.
-        const validConvs = parsed.filter(
-          (conv: any) => conv.title !== 'New Conversation' && conv.title !== 'New Convrsation'
-        );
-        
-        // If we filtered some out, immediately sync the cleaned version to local storage
-        if (validConvs.length !== parsed.length) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(validConvs));
-        }
-
-        return validConvs.map((conv: any) => ({
-          ...conv,
-          updatedAt: new Date(conv.updatedAt),
-          messages: conv.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-          })),
-        }));
-      } catch (e) {
-        console.error('Failed to parse conversations from local storage', e);
-        return [];
-      }
-    }
-    return [];
-  });
-
-  // null implies a "New, empty conversation" screen
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
+  // Load initial conversations on mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      // Load from server
+      const fetchConversations = async () => {
+        try {
+          const response = await fetch('/api/conversations', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const formatted = data.map((chat: any) => ({
+              id: chat.id,
+              title: chat.title,
+              messages: [],
+              updatedAt: new Date(chat.updated_at || chat.updatedAt),
+            }));
+            setConversations(formatted);
+          }
+        } catch (e) {
+          console.error('Failed to fetch user conversations', e);
+        }
+      };
+      fetchConversations();
+    } else {
+      // Load from local storage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const validConvs = parsed.filter(
+            (conv: any) => conv.title !== 'New Conversation' && conv.title !== 'New Convrsation'
+          );
+          
+          if (validConvs.length !== parsed.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(validConvs));
+          }
+
+          setConversations(
+            validConvs.map((conv: any) => ({
+              ...conv,
+              updatedAt: new Date(conv.updatedAt),
+              messages: conv.messages.map((msg: any) => ({
+                ...msg,
+                timestamp: new Date(msg.timestamp),
+              })),
+            }))
+          );
+        } catch (e) {
+          console.error('Failed to parse conversations from local storage', e);
+        }
+      }
+    }
+  }, []);
+
+  // Sync to local storage only if guest
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (!token && conversations.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    }
   }, [conversations]);
+
+  // Load message history on-demand when activeConversationId changes (for members)
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (!token || !activeConversationId) return;
+
+    // Check if messages are already loaded
+    const current = conversations.find((c) => c.id === activeConversationId);
+    if (current && current.messages.length > 0) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`/api/conversations/${activeConversationId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const formattedMessages = data.map((msg: any) => ({
+            id: msg.id,
+            role: msg.role === 'user' ? 'user' : 'ai',
+            content: msg.content,
+            timestamp: new Date(msg.created_at || msg.timestamp),
+          }));
+
+          setConversations((prev) =>
+            prev.map((c) => {
+              if (c.id === activeConversationId) {
+                return {
+                  ...c,
+                  messages: formattedMessages,
+                };
+              }
+              return c;
+            })
+          );
+        }
+      } catch (e) {
+        console.error('Failed to fetch conversation history', e);
+      }
+    };
+
+    fetchMessages();
+  }, [activeConversationId]);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId) || null;
 
@@ -73,6 +148,7 @@ export const useConversations = () => {
       
       setConversations((prev) => [newConv, ...prev]);
       setActiveConversationId(newConv.id);
+      return newConv.id;
     } else {
       // Updating existing conversation
       setConversations((prev) =>
@@ -87,12 +163,12 @@ export const useConversations = () => {
           return conv;
         }).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
       );
+      return activeConversationId;
     }
   };
 
   const updateLastMessage = (content: string) => {
     setConversations((prev) => {
-      // Find the most recently updated conversation to avoid closure staleness
       if (prev.length === 0) return prev;
       const sortedConvs = [...prev].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
       const mostRecentConvId = sortedConvs[0].id;
@@ -115,10 +191,62 @@ export const useConversations = () => {
     });
   };
 
+  const updateConversationId = (tempId: string, realId: string) => {
+    setConversations((prev) =>
+      prev.map((conv) => {
+        if (conv.id === tempId) {
+          return {
+            ...conv,
+            id: realId,
+          };
+        }
+        return conv;
+      })
+    );
+    setActiveConversationId(realId);
+  };
+
+  const renameConversation = (id: string, newTitle: string) => {
+    setConversations((prev) =>
+      prev.map((conv) => {
+        if (conv.id === id) {
+          return {
+            ...conv,
+            title: newTitle,
+            updatedAt: new Date(),
+          };
+        }
+        return conv;
+      })
+    );
+
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      fetch(`/api/conversations/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title: newTitle }),
+      }).catch((e) => console.error('Failed to rename on server:', e));
+    }
+  };
+
   const deleteConversation = (id: string) => {
     setConversations((prev) => prev.filter((conv) => conv.id !== id));
     if (activeConversationId === id) {
       setActiveConversationId(null);
+    }
+
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      fetch(`/api/conversations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }).catch((e) => console.error('Failed to delete on server:', e));
     }
   };
 
@@ -130,6 +258,8 @@ export const useConversations = () => {
     startNewConversation,
     addMessageToActive,
     updateLastMessage,
+    updateConversationId,
+    renameConversation,
     deleteConversation,
   };
 };

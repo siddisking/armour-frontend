@@ -15,6 +15,7 @@ export const ChatInterface: React.FC = () => {
     startNewConversation,
     addMessageToActive,
     updateLastMessage,
+    updateConversationId,
     deleteConversation,
   } = useConversations();
 
@@ -48,25 +49,52 @@ export const ChatInterface: React.FC = () => {
       .slice(-15)
       .map(m => ({ role: m.role, content: m.content }));
 
-    addMessageToActive([
+    // Capture the ID returned by addMessageToActive (which is the temporary ID or active ID)
+    const activeId = addMessageToActive([
       { role: 'user', content: currentUserInput },
       { role: 'ai', content: '' } // Empty placeholder for streaming
     ]);
 
     try {
-      const response = await fetch('/api/chat/guest', {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      const token = sessionStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const bodyPayload: any = {
+        message: currentUserInput,
+      };
+
+      if (token) {
+        // If we are in an active conversation and it is a real DB UUID (contains a dash)
+        const isTemporary = !activeId || !activeId.includes('-');
+        if (activeId && !isTemporary) {
+          bodyPayload.chatId = activeId;
+        }
+      } else {
+        bodyPayload.history = historyPayload;
+      }
+
+      const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          message: currentUserInput,
-          history: historyPayload
-        }),
+        headers,
+        body: JSON.stringify(bodyPayload),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Check if server returned a real conversation ID header
+      const serverChatId = response.headers.get('X-Chat-Id');
+      if (token && serverChatId && activeId) {
+        const isTemporary = !activeId.includes('-');
+        if (isTemporary) {
+          updateConversationId(activeId, serverChatId);
+        }
       }
 
       if (!response.body) throw new Error("No response body");
@@ -79,7 +107,6 @@ export const ChatInterface: React.FC = () => {
         if (done) break;
 
         const text = decoder.decode(value, { stream: true });
-        // Assuming updateLastMessage hook exists
         if (text) {
           updateLastMessage(text);
         }
