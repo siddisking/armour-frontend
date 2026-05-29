@@ -9,6 +9,7 @@ export const Admin: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<string>('anime');
   const [uploadMode, setUploadMode] = useState<'overwrite' | 'update'>('update');
+  const [vectorProvider, setVectorProvider] = useState<'gemini' | 'qwen' | 'both'>('gemini');
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
@@ -43,6 +44,7 @@ export const Admin: React.FC = () => {
     formData.append('file', file);
     formData.append('mediaType', mediaType);
     formData.append('uploadMode', uploadMode);
+    formData.append('vectorProvider', vectorProvider);
 
     try {
       const token = sessionStorage.getItem('token');
@@ -175,24 +177,46 @@ export const Admin: React.FC = () => {
           <UploadCloud size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem' }} />
           <h3 style={{ margin: '0 0 1rem' }}>Select CSV Dataset</h3>
           
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ marginRight: '1rem', color: 'var(--text-secondary)' }}>Dataset Type:</label>
-            <select 
-              value={mediaType} 
-              onChange={(e) => setMediaType(e.target.value)}
-              disabled={isUploading}
-              style={{
-                padding: '0.5rem',
-                borderRadius: '8px',
-                background: 'rgba(0,0,0,0.5)',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.2)'
-              }}
-            >
-              <option value="anime">Anime (MyAnimeList Format)</option>
-              <option value="series">TV Series (Hollywood Format)</option>
-              <option value="movies">Movies (Hollywood Format)</option>
-            </select>
+          <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <label style={{ marginRight: '1rem', color: 'var(--text-secondary)' }}>Dataset Type:</label>
+              <select 
+                value={mediaType} 
+                onChange={(e) => setMediaType(e.target.value)}
+                disabled={isUploading}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: '8px',
+                  background: 'rgba(0,0,0,0.5)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}
+              >
+                <option value="anime">Anime (MyAnimeList Format)</option>
+                <option value="series">TV Series (Hollywood Format)</option>
+                <option value="movies">Movies (Hollywood Format)</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <label style={{ marginRight: '1rem', color: 'var(--text-secondary)' }}>Embedding Model:</label>
+              <select 
+                value={vectorProvider} 
+                onChange={(e) => setVectorProvider(e.target.value as any)}
+                disabled={isUploading}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: '8px',
+                  background: 'rgba(0,0,0,0.5)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}
+              >
+                <option value="gemini">Google Gemini (3072 dims)</option>
+                <option value="qwen">SiliconFlow Qwen3 (1024 dims)</option>
+                <option value="both">Both Concurrently</option>
+              </select>
+            </div>
           </div>
 
           <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center', gap: '2rem' }}>

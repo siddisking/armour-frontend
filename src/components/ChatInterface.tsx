@@ -25,6 +25,7 @@ export const ChatInterface: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [modelProvider, setModelProvider] = useState<'gemini' | 'siliconflow'>('gemini');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -66,6 +67,7 @@ export const ChatInterface: React.FC = () => {
 
       const bodyPayload: any = {
         message: currentUserInput,
+        provider: modelProvider,
       };
 
       if (token) {
@@ -294,6 +296,53 @@ export const ChatInterface: React.FC = () => {
           borderTop: '1px solid var(--border-color)',
         }}>
           <div className="layout-container">
+            {/* Model Selector Toggle */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              marginBottom: '0.8rem',
+              fontSize: '0.85rem',
+              alignItems: 'center'
+            }}>
+              <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Active Model:</span>
+              <button
+                type="button"
+                onClick={() => setModelProvider('gemini')}
+                disabled={isLoading}
+                style={{
+                  background: modelProvider === 'gemini' ? 'var(--accent-primary)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid ' + (modelProvider === 'gemini' ? 'var(--accent-primary)' : 'var(--border-color)'),
+                  color: modelProvider === 'gemini' ? 'white' : 'var(--text-secondary)',
+                  padding: '0.3rem 0.8rem',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ✨ Google Gemini
+              </button>
+              <button
+                type="button"
+                onClick={() => setModelProvider('siliconflow')}
+                disabled={isLoading}
+                style={{
+                  background: modelProvider === 'siliconflow' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid ' + (modelProvider === 'siliconflow' ? '#7c3aed' : 'var(--border-color)'),
+                  color: modelProvider === 'siliconflow' ? 'white' : 'var(--text-secondary)',
+                  padding: '0.3rem 0.8rem',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                🔥 SiliconFlow Qwen3
+              </button>
+            </div>
+
             <form 
               onSubmit={handleSendMessage}
               style={{
