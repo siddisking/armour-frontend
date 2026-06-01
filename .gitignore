@@ -26,3 +26,9 @@ dist-ssr
 # Custom PlotArmourAI Ignore
 .vscode/
 context.md
+
+# Environments
+.env
+.env.*
+!.env.example
+
