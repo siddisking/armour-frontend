@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Database, UploadCloud, Play, ShieldAlert } from 'lucide-react';
+import { Database, UploadCloud, Play } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Navigate } from 'react-router-dom';
 
