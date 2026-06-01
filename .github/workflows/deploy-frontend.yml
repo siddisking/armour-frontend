@@ -32,4 +32,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: 'armour-frontend' # Matches your Cloudflare Pages project name
           directory: './dist' # Vite builds static assets here
-          gitBranch: 'main'
+          branch: 'main'
