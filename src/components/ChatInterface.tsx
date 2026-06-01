@@ -26,7 +26,11 @@ export const ChatInterface: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [modelProvider, setModelProvider] = useState<'gemini' | 'siliconflow'>('gemini');
+  
+  const isGeminiDisabled = import.meta.env.VITE_DISABLE_GEMINI === 'true';
+  const [modelProvider, setModelProvider] = useState<'gemini' | 'siliconflow'>(
+    isGeminiDisabled ? 'siliconflow' : 'gemini'
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -309,14 +313,16 @@ export const ChatInterface: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setModelProvider('gemini')}
-                disabled={isLoading}
+                disabled={isLoading || isGeminiDisabled}
+                title={isGeminiDisabled ? "Coming Soon!" : ""}
                 style={{
                   background: modelProvider === 'gemini' ? 'var(--accent-primary)' : 'rgba(255,255,255,0.02)',
                   border: '1px solid ' + (modelProvider === 'gemini' ? 'var(--accent-primary)' : 'var(--border-color)'),
                   color: modelProvider === 'gemini' ? 'white' : 'var(--text-secondary)',
                   padding: '0.3rem 0.8rem',
                   borderRadius: '20px',
-                  cursor: 'pointer',
+                  cursor: isGeminiDisabled ? 'not-allowed' : (isLoading ? 'default' : 'pointer'),
+                  opacity: isGeminiDisabled ? 0.5 : 1,
                   fontSize: '0.8rem',
                   fontWeight: 500,
                   transition: 'all 0.2s ease'
