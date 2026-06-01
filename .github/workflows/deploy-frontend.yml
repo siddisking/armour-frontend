@@ -25,7 +25,7 @@ jobs:
       - name: Build Application
         run: npm run build
         env:
-          VITE_DISABLE_GEMINI: ${{ vars.VITE_DISABLE_GEMINI }}
+          VITE_DISABLE_GEMINI: ${{ secrets.VITE_DISABLE_GEMINI || vars.VITE_DISABLE_GEMINI }}
 
 
       - name: Deploy to Cloudflare Pages
