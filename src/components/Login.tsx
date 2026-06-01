@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Bot, LogIn } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -13,7 +14,7 @@ export const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

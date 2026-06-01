@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Database, UploadCloud, Play } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Navigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export const Admin: React.FC = () => {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
@@ -48,7 +49,7 @@ export const Admin: React.FC = () => {
 
     try {
       const token = sessionStorage.getItem('token');
-      const response = await fetch('/api/ingest', {
+      const response = await fetch(`${API_BASE_URL}/api/ingest`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

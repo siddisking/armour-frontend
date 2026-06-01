@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Conversation, Message } from '../types';
+import { API_BASE_URL } from '../config';
 
 const STORAGE_KEY = 'plotarmor_conversations';
 
@@ -14,7 +15,7 @@ export const useConversations = () => {
       // Load from server
       const fetchConversations = async () => {
         try {
-          const response = await fetch('/api/conversations', {
+          const response = await fetch(`${API_BASE_URL}/api/conversations`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -84,7 +85,7 @@ export const useConversations = () => {
 
     const fetchMessages = async () => {
       try {
-        const response = await fetch(`/api/conversations/${activeConversationId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/conversations/${activeConversationId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -222,7 +223,7 @@ export const useConversations = () => {
 
     const token = sessionStorage.getItem('token');
     if (token) {
-      fetch(`/api/conversations/${id}`, {
+      fetch(`${API_BASE_URL}/api/conversations/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +242,7 @@ export const useConversations = () => {
 
     const token = sessionStorage.getItem('token');
     if (token) {
-      fetch(`/api/conversations/${id}`, {
+      fetch(`${API_BASE_URL}/api/conversations/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

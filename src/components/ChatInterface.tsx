@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { useConversations } from '../hooks/useConversations';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export const ChatInterface: React.FC = () => {
   const {
@@ -80,7 +81,7 @@ export const ChatInterface: React.FC = () => {
         bodyPayload.history = historyPayload;
       }
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers,
         body: JSON.stringify(bodyPayload),
