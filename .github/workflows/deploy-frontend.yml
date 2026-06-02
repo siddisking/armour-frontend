@@ -26,6 +26,8 @@ jobs:
         run: npm run build
         env:
           VITE_DISABLE_GEMINI: ${{ secrets.VITE_DISABLE_GEMINI || vars.VITE_DISABLE_GEMINI }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
+
 
 
       - name: Deploy to Cloudflare Pages

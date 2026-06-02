@@ -7,6 +7,15 @@ interface MessageBubbleProps {
   message: Message;
 }
 
+const isValidImageUrl = (url?: string): boolean => {
+  if (!url) return false;
+  const cleanUrl = url.trim().toLowerCase();
+  return (
+    (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) &&
+    /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(cleanUrl)
+  );
+};
+
 const parseInlineMarkdown = (text: string): React.ReactNode => {
   const parts: React.ReactNode[] = [];
   let currentIndex = 0;
@@ -33,21 +42,25 @@ const parseInlineMarkdown = (text: string): React.ReactNode => {
       const imgAlt = matchText.substring(2, closeBracket);
       const imgUrl = matchText.substring(closeBracket + 2, matchText.length - 1);
       
-      parts.push(
-        <div key={keyIdx++} style={{ margin: '10px 0', display: 'block', maxWidth: '100%' }}>
-          <img 
-            src={imgUrl} 
-            alt={imgAlt} 
-            style={{ 
-              maxWidth: '160px', 
-              borderRadius: 'var(--radius-md, 8px)', 
-              boxShadow: 'var(--shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1))',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'block'
-            }} 
-          />
-        </div>
-      );
+      if (isValidImageUrl(imgUrl)) {
+        parts.push(
+          <div key={keyIdx++} style={{ margin: '10px 0', display: 'block', maxWidth: '100%' }}>
+            <img 
+              src={imgUrl} 
+              alt={imgAlt} 
+              style={{ 
+                maxWidth: '160px', 
+                borderRadius: 'var(--radius-md, 8px)', 
+                boxShadow: 'var(--shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1))',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'block'
+              }} 
+            />
+          </div>
+        );
+      } else {
+        parts.push(matchText);
+      }
     } else if (matchText.startsWith('[') && matchText.includes('](')) {
       const closeBracket = matchText.indexOf(']');
       const linkText = matchText.substring(1, closeBracket);
@@ -216,7 +229,7 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
   return (
     <div className="anime-card-row">
       {/* Poster Image */}
-      {data.image && (
+      {isValidImageUrl(data.image) && (
         <div className="anime-poster-wrapper">
           <img 
             src={data.image} 
@@ -335,7 +348,7 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
             <div className="anime-modal-content">
               <div className="anime-modal-hero">
                 {/* Bigger poster */}
-                {data.image && (
+                {isValidImageUrl(data.image) && (
                   <div className="anime-modal-poster-wrapper">
                     <img 
                       src={data.image} 
