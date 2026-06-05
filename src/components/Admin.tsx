@@ -215,7 +215,7 @@ export const Admin: React.FC = () => {
                 }}
               >
                 <option value={SUPPORTED_MODELS.GEMINI_FLASH}>Gemini 2.5 Flash</option>
-                <option value={SUPPORTED_MODELS.QWEN_7B}>Qwen 2.5 (SiliconFlow)</option>
+                <option value={SUPPORTED_MODELS.QWEN_7B}>Qwen 2.5</option>
                 <option value="both">Both Models Concurrently</option>
               </select>
             </div>

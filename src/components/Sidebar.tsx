@@ -12,15 +12,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ conversations, activeId, onSelect, onNew, onDelete }) => {
   return (
-    <aside style={{
-      width: '260px',
-      height: '100vh',
-      backgroundColor: 'var(--bg-secondary)',
-      borderRight: '1px solid var(--border-color)',
-      display: 'flex',
-      flexDirection: 'column',
-      flexShrink: 0,
-    }}>
+    <aside className="sidebar-wrapper">
       <div style={{ padding: 'var(--space-md)' }}>
         <button
           onClick={onNew}

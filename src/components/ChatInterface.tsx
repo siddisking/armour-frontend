@@ -26,7 +26,12 @@ export const ChatInterface: React.FC = () => {
 
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 768;
+    }
+    return true;
+  });
   
   const isGeminiDisabled = import.meta.env.VITE_DISABLE_GEMINI === 'true';
   const [model, setModel] = useState<ModelId>(
@@ -41,6 +46,20 @@ export const ChatInterface: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [activeConversation?.messages]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,35 +148,32 @@ export const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      {isSidebarOpen && (
-        <Sidebar
-          conversations={conversations}
-          activeId={activeConversationId}
-          onSelect={setActiveConversationId}
-          onNew={startNewConversation}
-          onDelete={deleteConversation}
-        />
-      )}
+    <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <div 
+        className="sidebar-backdrop"
+        onClick={() => setIsSidebarOpen(false)}
+      />
+      <Sidebar
+        conversations={conversations}
+        activeId={activeConversationId}
+        onSelect={(id) => {
+          setActiveConversationId(id);
+          if (window.innerWidth <= 768) {
+            setIsSidebarOpen(false);
+          }
+        }}
+        onNew={() => {
+          startNewConversation();
+          if (window.innerWidth <= 768) {
+            setIsSidebarOpen(false);
+          }
+        }}
+        onDelete={deleteConversation}
+      />
 
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'var(--bg-primary)',
-        height: '100%',
-        position: 'relative',
-      }}>
+      <div className="chat-main">
         {/* Header */}
-        <header style={{
-          padding: 'var(--space-md) var(--space-xl)',
-          background: 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-md)',
-          zIndex: 10,
-        }}>
+        <header className="chat-header">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             style={{
@@ -172,15 +188,33 @@ export const ChatInterface: React.FC = () => {
           >
             <Menu size={24} />
           </button>
-          <div className="flex-center" style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--accent-primary)',
-          }}>
-            <Bot size={20} color="white" />
+          <div className="header-title-wrapper">
+            <div className="flex-center" style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--accent-primary)',
+            }}>
+              <Bot size={20} color="white" />
+            </div>
+            <h1 style={{ margin: 0, fontSize: '1.25rem' }}>PlotArmor AI</h1>
           </div>
-          <h1 style={{ margin: 0, fontSize: '1.25rem', flex: 1 }}>PlotArmor AI</h1>
+
+          <div className="header-model-selector">
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value as ModelId)}
+              disabled={isLoading}
+              className="model-select-dropdown"
+            >
+              <option value={SUPPORTED_MODELS.GEMINI_FLASH} disabled={isGeminiDisabled}>
+                ✨ Gemini 2.5 Flash
+              </option>
+              <option value={SUPPORTED_MODELS.QWEN_7B}>
+                🔥 Qwen 2.5
+              </option>
+            </select>
+          </div>
 
           {/* Authentication Status */}
           {user ? (
@@ -269,9 +303,9 @@ export const ChatInterface: React.FC = () => {
                 }}>
                   <Clapperboard size={40} color="var(--accent-primary)" />
                 </div>
-                <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>What should we watch next?</h2>
-                <p style={{ maxWidth: '400px' }}>
-                  Ask PlotArmor AI for anime, movies, or TV series recommendations. Try describing a genre, plot, or specific trope.
+                <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '2rem' }}>PlotArmor AI</h2>
+                <p style={{ maxWidth: '400px', fontSize: '1.1rem' }}>
+                  Ask PlotArmor anything about anime/movies/series
                 </p>
               </div>
             )}
@@ -297,59 +331,24 @@ export const ChatInterface: React.FC = () => {
         </main>
 
         {/* Input Footer */}
-        <footer style={{
-          padding: 'var(--space-md) var(--space-xl)',
-          background: 'var(--bg-secondary)',
-          borderTop: '1px solid var(--border-color)',
-        }}>
+        <footer className="chat-footer">
           <div className="layout-container">
             {/* Model Selector Toggle */}
-            <div style={{
-              display: 'flex',
-              gap: '0.5rem',
-              marginBottom: '0.8rem',
-              fontSize: '0.85rem',
-              alignItems: 'center'
-            }}>
+            <div className="model-selector">
               <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Active Model:</span>
-              <button
-                type="button"
-                onClick={() => setModel(SUPPORTED_MODELS.GEMINI_FLASH)}
-                disabled={isLoading || isGeminiDisabled}
-                title={isGeminiDisabled ? "Coming Soon!" : ""}
-                style={{
-                  background: model === SUPPORTED_MODELS.GEMINI_FLASH ? 'var(--accent-primary)' : 'rgba(255,255,255,0.02)',
-                  border: '1px solid ' + (model === SUPPORTED_MODELS.GEMINI_FLASH ? 'var(--accent-primary)' : 'var(--border-color)'),
-                  color: model === SUPPORTED_MODELS.GEMINI_FLASH ? 'white' : 'var(--text-secondary)',
-                  padding: '0.3rem 0.8rem',
-                  borderRadius: '20px',
-                  cursor: isGeminiDisabled ? 'not-allowed' : (isLoading ? 'default' : 'pointer'),
-                  opacity: isGeminiDisabled ? 0.5 : 1,
-                  fontSize: '0.8rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                ✨ Gemini 2.5 Flash
-              </button>
-              <button
-                type="button"
-                onClick={() => setModel(SUPPORTED_MODELS.QWEN_7B)}
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value as ModelId)}
                 disabled={isLoading}
-                style={{
-                  background: model === SUPPORTED_MODELS.QWEN_7B ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'rgba(255,255,255,0.02)',
-                  border: '1px solid ' + (model === SUPPORTED_MODELS.QWEN_7B ? '#7c3aed' : 'var(--border-color)'),
-                  color: model === SUPPORTED_MODELS.QWEN_7B ? 'white' : 'var(--text-secondary)',
-                  padding: '0.3rem 0.8rem',
-                  borderRadius: '20px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s ease'
-                }}
+                className="model-select-dropdown"
               >
-                🔥 Qwen 2.5 (SiliconFlow)
-              </button>
+                <option value={SUPPORTED_MODELS.GEMINI_FLASH} disabled={isGeminiDisabled}>
+                  ✨ Gemini 2.5 Flash
+                </option>
+                <option value={SUPPORTED_MODELS.QWEN_7B}>
+                  🔥 Qwen 2.5
+                </option>
+              </select>
             </div>
 
             <form 
