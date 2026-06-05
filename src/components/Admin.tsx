@@ -3,6 +3,7 @@ import { Database, UploadCloud, Play } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+import { SUPPORTED_MODELS } from '../utils/constant';
 
 export const Admin: React.FC = () => {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
@@ -10,7 +11,7 @@ export const Admin: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<string>('anime');
   const [uploadMode, setUploadMode] = useState<'overwrite' | 'update'>('update');
-  const [vectorProvider, setVectorProvider] = useState<'gemini' | 'qwen' | 'both'>('gemini');
+  const [vectorModel, setVectorModel] = useState<typeof SUPPORTED_MODELS.GEMINI_FLASH | typeof SUPPORTED_MODELS.QWEN_7B | 'both'>(SUPPORTED_MODELS.GEMINI_FLASH);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
@@ -45,7 +46,7 @@ export const Admin: React.FC = () => {
     formData.append('file', file);
     formData.append('mediaType', mediaType);
     formData.append('uploadMode', uploadMode);
-    formData.append('vectorProvider', vectorProvider);
+    formData.append('vectorProvider', vectorModel);
 
     try {
       const token = sessionStorage.getItem('token');
@@ -202,8 +203,8 @@ export const Admin: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <label style={{ marginRight: '1rem', color: 'var(--text-secondary)' }}>Embedding Model:</label>
               <select 
-                value={vectorProvider} 
-                onChange={(e) => setVectorProvider(e.target.value as any)}
+                value={vectorModel} 
+                onChange={(e) => setVectorModel(e.target.value as any)}
                 disabled={isUploading}
                 style={{
                   padding: '0.5rem',
@@ -213,9 +214,9 @@ export const Admin: React.FC = () => {
                   border: '1px solid rgba(255,255,255,0.2)'
                 }}
               >
-                <option value="gemini">Google Gemini (3072 dims)</option>
-                <option value="qwen">SiliconFlow Qwen3 (1024 dims)</option>
-                <option value="both">Both Concurrently</option>
+                <option value={SUPPORTED_MODELS.GEMINI_FLASH}>Gemini 2.5 Flash</option>
+                <option value={SUPPORTED_MODELS.QWEN_7B}>Qwen 2.5 (SiliconFlow)</option>
+                <option value="both">Both Models Concurrently</option>
               </select>
             </div>
           </div>

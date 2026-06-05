@@ -6,6 +6,7 @@ import { useConversations } from '../hooks/useConversations';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+import { SUPPORTED_MODELS, ModelId } from '../utils/constant';
 
 export const ChatInterface: React.FC = () => {
   const {
@@ -28,8 +29,8 @@ export const ChatInterface: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   const isGeminiDisabled = import.meta.env.VITE_DISABLE_GEMINI === 'true';
-  const [modelProvider, setModelProvider] = useState<'gemini' | 'siliconflow'>(
-    isGeminiDisabled ? 'siliconflow' : 'gemini'
+  const [model, setModel] = useState<ModelId>(
+    isGeminiDisabled ? SUPPORTED_MODELS.QWEN_7B : SUPPORTED_MODELS.GEMINI_FLASH
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -72,7 +73,8 @@ export const ChatInterface: React.FC = () => {
 
       const bodyPayload: any = {
         message: currentUserInput,
-        provider: modelProvider,
+        model: model,
+        provider: model, // Backward compatibility fallback
       };
 
       if (token) {
@@ -312,13 +314,13 @@ export const ChatInterface: React.FC = () => {
               <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Active Model:</span>
               <button
                 type="button"
-                onClick={() => setModelProvider('gemini')}
+                onClick={() => setModel(SUPPORTED_MODELS.GEMINI_FLASH)}
                 disabled={isLoading || isGeminiDisabled}
                 title={isGeminiDisabled ? "Coming Soon!" : ""}
                 style={{
-                  background: modelProvider === 'gemini' ? 'var(--accent-primary)' : 'rgba(255,255,255,0.02)',
-                  border: '1px solid ' + (modelProvider === 'gemini' ? 'var(--accent-primary)' : 'var(--border-color)'),
-                  color: modelProvider === 'gemini' ? 'white' : 'var(--text-secondary)',
+                  background: model === SUPPORTED_MODELS.GEMINI_FLASH ? 'var(--accent-primary)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid ' + (model === SUPPORTED_MODELS.GEMINI_FLASH ? 'var(--accent-primary)' : 'var(--border-color)'),
+                  color: model === SUPPORTED_MODELS.GEMINI_FLASH ? 'white' : 'var(--text-secondary)',
                   padding: '0.3rem 0.8rem',
                   borderRadius: '20px',
                   cursor: isGeminiDisabled ? 'not-allowed' : (isLoading ? 'default' : 'pointer'),
@@ -328,16 +330,16 @@ export const ChatInterface: React.FC = () => {
                   transition: 'all 0.2s ease'
                 }}
               >
-                ✨ Google Gemini
+                ✨ Gemini 2.5 Flash
               </button>
               <button
                 type="button"
-                onClick={() => setModelProvider('siliconflow')}
+                onClick={() => setModel(SUPPORTED_MODELS.QWEN_7B)}
                 disabled={isLoading}
                 style={{
-                  background: modelProvider === 'siliconflow' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'rgba(255,255,255,0.02)',
-                  border: '1px solid ' + (modelProvider === 'siliconflow' ? '#7c3aed' : 'var(--border-color)'),
-                  color: modelProvider === 'siliconflow' ? 'white' : 'var(--text-secondary)',
+                  background: model === SUPPORTED_MODELS.QWEN_7B ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid ' + (model === SUPPORTED_MODELS.QWEN_7B ? '#7c3aed' : 'var(--border-color)'),
+                  color: model === SUPPORTED_MODELS.QWEN_7B ? 'white' : 'var(--text-secondary)',
                   padding: '0.3rem 0.8rem',
                   borderRadius: '20px',
                   cursor: 'pointer',
@@ -346,7 +348,7 @@ export const ChatInterface: React.FC = () => {
                   transition: 'all 0.2s ease'
                 }}
               >
-                🔥 SiliconFlow Qwen3
+                🔥 Qwen 2.5 (SiliconFlow)
               </button>
             </div>
 
