@@ -4,3 +4,11 @@ export const SUPPORTED_MODELS = {
 } as const;
 
 export type ModelId = typeof SUPPORTED_MODELS[keyof typeof SUPPORTED_MODELS];
+
+export const MEDIA_TYPES = {
+  ANIME: 'anime',
+  MOVIES: 'movies',
+  SERIES: 'series',
+} as const;
+
+export type MediaType = typeof MEDIA_TYPES[keyof typeof MEDIA_TYPES];

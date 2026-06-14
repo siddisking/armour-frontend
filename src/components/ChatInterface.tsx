@@ -6,7 +6,7 @@ import { useConversations } from '../hooks/useConversations';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
-import { SUPPORTED_MODELS, ModelId } from '../utils/constant';
+import { SUPPORTED_MODELS, ModelId, MEDIA_TYPES, MediaType } from '../utils/constant';
 
 export const ChatInterface: React.FC = () => {
   const {
@@ -37,6 +37,7 @@ export const ChatInterface: React.FC = () => {
   const [model, setModel] = useState<ModelId>(
     isGeminiDisabled ? SUPPORTED_MODELS.QWEN_7B : SUPPORTED_MODELS.GEMINI_FLASH
   );
+  const [mediaType, setMediaType] = useState<MediaType>(MEDIA_TYPES.ANIME);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -94,6 +95,7 @@ export const ChatInterface: React.FC = () => {
         message: currentUserInput,
         model: model,
         provider: model, // Backward compatibility fallback
+        mediaType: mediaType,
       };
 
       if (token) {
@@ -200,7 +202,7 @@ export const ChatInterface: React.FC = () => {
             <h1 style={{ margin: 0, fontSize: '1.25rem' }}>PlotArmor AI</h1>
           </div>
 
-          <div className="header-model-selector">
+          <div className="header-model-selector" style={{ display: 'flex', gap: '0.5rem' }}>
             <select
               value={model}
               onChange={(e) => setModel(e.target.value as ModelId)}
@@ -213,6 +215,16 @@ export const ChatInterface: React.FC = () => {
               <option value={SUPPORTED_MODELS.QWEN_7B}>
                 🔥 Qwen 2.5
               </option>
+            </select>
+
+            <select
+              value={mediaType}
+              onChange={(e) => setMediaType(e.target.value as any)}
+              disabled={isLoading}
+              className="model-select-dropdown"
+            >
+              <option value={MEDIA_TYPES.ANIME}>🎬 Anime</option>
+              <option value={MEDIA_TYPES.MOVIES}>🎥 Movies</option>
             </select>
           </div>
 

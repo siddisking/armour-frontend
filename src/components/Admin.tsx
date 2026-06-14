@@ -3,13 +3,13 @@ import { Database, UploadCloud, Play } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
-import { SUPPORTED_MODELS } from '../utils/constant';
+import { SUPPORTED_MODELS, MEDIA_TYPES, MediaType } from '../utils/constant';
 
 export const Admin: React.FC = () => {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
-  const [mediaType, setMediaType] = useState<string>('anime');
+  const [mediaType, setMediaType] = useState<MediaType>(MEDIA_TYPES.ANIME);
   const [uploadMode, setUploadMode] = useState<'overwrite' | 'update'>('update');
   const [vectorModel, setVectorModel] = useState<typeof SUPPORTED_MODELS.GEMINI_FLASH | typeof SUPPORTED_MODELS.QWEN_7B | 'both'>(SUPPORTED_MODELS.GEMINI_FLASH);
   const [isUploading, setIsUploading] = useState(false);
@@ -184,7 +184,7 @@ export const Admin: React.FC = () => {
               <label style={{ marginRight: '1rem', color: 'var(--text-secondary)' }}>Dataset Type:</label>
               <select 
                 value={mediaType} 
-                onChange={(e) => setMediaType(e.target.value)}
+                onChange={(e) => setMediaType(e.target.value as MediaType)}
                 disabled={isUploading}
                 style={{
                   padding: '0.5rem',
@@ -194,9 +194,9 @@ export const Admin: React.FC = () => {
                   border: '1px solid rgba(255,255,255,0.2)'
                 }}
               >
-                <option value="anime">Anime (MyAnimeList Format)</option>
-                <option value="series">TV Series (Hollywood Format)</option>
-                <option value="movies">Movies (Hollywood Format)</option>
+                <option value={MEDIA_TYPES.ANIME}>Anime (MyAnimeList Format)</option>
+                <option value={MEDIA_TYPES.SERIES}>TV Series (Hollywood Format)</option>
+                <option value={MEDIA_TYPES.MOVIES}>Movies (Hollywood Format)</option>
               </select>
             </div>
 

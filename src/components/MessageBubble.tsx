@@ -192,13 +192,11 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
   }
 
   let statusClass = 'status-finished';
-  if (data.status) {
-    const s = data.status.toLowerCase();
-    if (s.includes('airing') || s.includes('current')) {
-      statusClass = 'status-airing';
-    } else if (s.includes('not yet') || s.includes('upcoming') || s.includes('future')) {
-      statusClass = 'status-upcoming';
-    }
+  const statusLower = data.status?.toLowerCase() || '';
+  if (statusLower.includes('airing') || statusLower.includes('current')) {
+    statusClass = 'status-airing';
+  } else if (statusLower.includes('not yet') || statusLower.includes('upcoming') || statusLower.includes('future')) {
+    statusClass = 'status-upcoming';
   }
 
   const getGenreClass = (genre: string) => {
@@ -221,10 +219,28 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
 
   const formattedStart = formatDateString(data.startdate);
   const formattedEnd = formatDateString(data.enddate);
+  
+  const isMovie = statusLower === 'released' || data.episodes?.toLowerCase().includes('min') || data.episodes?.toLowerCase().includes('hour');
+  
   let airingPeriod = '';
   if (formattedStart) {
-    airingPeriod = formattedEnd ? `${formattedStart} – ${formattedEnd}` : `${formattedStart} – Present`;
+    if (formattedEnd) {
+      airingPeriod = `${formattedStart} – ${formattedEnd}`;
+    } else {
+      airingPeriod = isMovie ? formattedStart : `${formattedStart} – Present`;
+    }
   }
+
+  const episodesLabel = isMovie ? 'Runtime' : 'Episodes';
+  const dateLabel = isMovie ? 'Released' : 'Aired';
+
+  const getLinkLabel = (url?: string) => {
+    if (!url) return 'View Details';
+    const lower = url.toLowerCase();
+    if (lower.includes('myanimelist.net')) return 'View on MyAnimeList';
+    if (lower.includes('imdb.com')) return 'View on IMDb';
+    return 'View Details';
+  };
 
   return (
     <div className="anime-card-row">
@@ -233,7 +249,7 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
         <div className="anime-poster-wrapper">
           <img 
             src={data.image} 
-            alt={data.title || 'Anime Poster'} 
+            alt={data.title || 'Poster'} 
             className="anime-poster"
             loading="lazy"
           />
@@ -289,14 +305,14 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
 
           {data.episodes && (
             <div className="anime-metric-item">
-              <span className="anime-metric-label">Episodes</span>
+              <span className="anime-metric-label">{episodesLabel}</span>
               <span className="anime-metric-val">{data.episodes}</span>
             </div>
           )}
 
           {airingPeriod && (
             <div className="anime-metric-item">
-              <span className="anime-metric-label">Aired</span>
+              <span className="anime-metric-label">{dateLabel}</span>
               <span className="anime-metric-val">{airingPeriod}</span>
             </div>
           )}
@@ -352,7 +368,7 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
                   <div className="anime-modal-poster-wrapper">
                     <img 
                       src={data.image} 
-                      alt={data.title || 'Anime Poster'} 
+                      alt={data.title || 'Poster'} 
                       className="anime-modal-poster"
                     />
                   </div>
@@ -390,12 +406,12 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
                     )}
                     {data.episodes && (
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Episodes:</span> {data.episodes}
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{episodesLabel}:</span> {data.episodes}
                       </div>
                     )}
                     {airingPeriod && (
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Airing Period:</span> {airingPeriod}
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{isMovie ? 'Release Date:' : 'Airing Period:'}</span> {airingPeriod}
                       </div>
                     )}
                     {data.studio && (
@@ -430,7 +446,7 @@ const AnimeCard: React.FC<{ data: CardData }> = ({ data }) => {
                     rel="noopener noreferrer"
                     className="anime-modal-button"
                   >
-                    View on MyAnimeList <ExternalLink size={14} />
+                    {getLinkLabel(data.mal)} <ExternalLink size={14} />
                   </a>
                 )}
               </div>
