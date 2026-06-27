@@ -2,6 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      if (window.location.hostname === 'armour-frontend.pages.dev') {
+        window.location.replace('https://armour-gateway.onrender.com' + window.location.pathname + window.location.search);
+      }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="PlotArmor AI - Your intelligent conversational recommendation agent for movies, anime, and TV series." />
