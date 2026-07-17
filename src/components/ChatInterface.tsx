@@ -34,7 +34,7 @@ export const ChatInterface: React.FC = () => {
   });
   
   const isGeminiDisabled = import.meta.env.VITE_DISABLE_GEMINI === 'true';
-  const [model, setModel] = useState<ModelId>(
+  const [model] = useState<ModelId>(
     isGeminiDisabled ? SUPPORTED_MODELS.QWEN_7B : SUPPORTED_MODELS.GEMINI_FLASH
   );
   const [mediaType, setMediaType] = useState<MediaType>(MEDIA_TYPES.ANIME);
