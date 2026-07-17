@@ -20,8 +20,8 @@ const parseInlineMarkdown = (text: string): React.ReactNode => {
   const parts: React.ReactNode[] = [];
   let currentIndex = 0;
   
-  // RegEx to scan for bold text (**bold**), images (![alt](url)), and markdown links ([label](url))
-  const regex = /(\*\*.*?\*\*|!\[.*?\]\(.*?\)|\[.*?\]\(.*?\))/g;
+  // RegEx to scan for bold text (**bold**), italics (*italic*), images (![alt](url)), and markdown links ([label](url))
+  const regex = /(\*\*.*?\*\*|\*.*?\*|!\[.*?\]\(.*?\)|\[.*?\]\(.*?\))/g;
   let match;
   let keyIdx = 0;
 
@@ -37,6 +37,9 @@ const parseInlineMarkdown = (text: string): React.ReactNode => {
     if (matchText.startsWith('**') && matchText.endsWith('**')) {
       const boldContent = matchText.substring(2, matchText.length - 2);
       parts.push(<strong key={keyIdx++}>{boldContent}</strong>);
+    } else if (matchText.startsWith('*') && matchText.endsWith('*')) {
+      const italicContent = matchText.substring(1, matchText.length - 1);
+      parts.push(<em key={keyIdx++}>{italicContent}</em>);
     } else if (matchText.startsWith('!') && matchText.includes('](')) {
       const closeBracket = matchText.indexOf(']');
       const imgAlt = matchText.substring(2, closeBracket);

@@ -203,19 +203,6 @@ export const ChatInterface: React.FC = () => {
           </div>
 
           <div className="header-model-selector" style={{ display: 'flex', gap: '0.5rem' }}>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value as ModelId)}
-              disabled={isLoading}
-              className="model-select-dropdown"
-            >
-              <option value={SUPPORTED_MODELS.GEMINI_FLASH} disabled={isGeminiDisabled}>
-                ✨ Gemini 2.5 Flash
-              </option>
-              <option value={SUPPORTED_MODELS.QWEN_7B}>
-                🔥 Qwen 2.5
-              </option>
-            </select>
 
             <select
               value={mediaType}
@@ -345,23 +332,7 @@ export const ChatInterface: React.FC = () => {
         {/* Input Footer */}
         <footer className="chat-footer">
           <div className="layout-container">
-            {/* Model Selector Toggle */}
-            <div className="model-selector">
-              <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Active Model:</span>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value as ModelId)}
-                disabled={isLoading}
-                className="model-select-dropdown"
-              >
-                <option value={SUPPORTED_MODELS.GEMINI_FLASH} disabled={isGeminiDisabled}>
-                  ✨ Gemini 2.5 Flash
-                </option>
-                <option value={SUPPORTED_MODELS.QWEN_7B}>
-                  🔥 Qwen 2.5
-                </option>
-              </select>
-            </div>
+
 
             <form 
               onSubmit={handleSendMessage}
